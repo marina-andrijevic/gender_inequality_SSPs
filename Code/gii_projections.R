@@ -21,11 +21,11 @@ library(stargazer)
 library(RColorBrewer)
 library(colorspace)
 
-setwd('/Users/marinaandrijevic/PhD/Gender equality projections/Data')
+setwd('/Users/marinaandrijevic/Documents/GitHub/gender_inequality_SSPs/')
 
 # Load replicated GII
 
-gii.master <- read.csv('Output/gii_replication.csv')
+gii.master <- read.csv('/Users/marinaandrijevic/Documents/GitHub/gender_inequality_SSPs/Output/gii_replication.csv')
 
 # Current range of the OECD countries (for cut-off values on figure legends)
 
@@ -300,34 +300,48 @@ pop.ipol <- pop.prep %>%
 
 pop.size <-read.csv('Input/pop_size_fem_3.csv', skip = 8) %>% 
   rename_all(tolower) %>%
-  filter(year == 2050) %>% 
+  filter(year == 2030) %>% 
   bind_rows(pop.ipol) %>% 
   mutate(countrycode = countrycode(area, 'country.name', 'iso3c')) %>% 
   drop_na(countrycode) %>% 
-  filter(sex == 'Female' & age == '15+') %>% 
+  filter(sex == 'Female') %>% 
   left_join(gii.relative, by = c('countrycode', 'year', 'scenario')) %>%
   drop_na(gii) %>% 
-  group_by(year, scenario) %>% 
+  group_by(year, scenario, age) %>% 
   mutate(girls.total = sum(population)) %>% 
   ungroup() %>% 
-  group_by(year, scenario, q) %>% 
+  group_by(year, scenario, age, q) %>% 
   mutate(girls.qs = sum(population)) %>% 
   ungroup() %>% 
   mutate(fract = girls.qs/girls.total * 100) %>% 
   group_by(scenario, year) %>% 
   arrange(desc(q)) %>%
-  mutate(lab.ypos = cumsum(fract) - 0.5*fract) %>% 
-  mutate(id = paste0(scenario, year, q)) %>% 
+  mutate(id = paste0(scenario, year, age, q)) %>% 
   ungroup() %>% 
   filter(!duplicated(id)) %>% 
-  mutate(q = q %>% as.factor())
+  mutate(q = q %>% as.factor()) %>% 
+  group_by(year, scenario, age) %>% 
+  mutate(lab.ypos = cumsum(fract) - 0.5*fract) %>% 
+  ungroup() %>% 
+  mutate(scenpair = paste0(scenario, '_', year))
 
 
-ggplot(pop.size %>% filter(year == 2017)) +
+# For 0-14
+ggplot(pop.size %>% filter(age == '0--14')) +
   geom_bar(aes(x = 2, y = fract, fill = q), stat = "identity", color = "white") +
   coord_polar(theta = "y", start = 0) +
-  #geom_text(x = 2, aes(y = lab.ypos, label = fract, color = "white"), size  = 4) +
-  scale_fill_brewer(type = 'seq', palette = 'Reds', direction = 1) +
-  labs(title = 'Girls affected 0--14 in 2017') +
+  geom_text(aes(x = 2, y = lab.ypos, label = round(fract)), color = "white") +
+  scale_fill_manual(values = c(q1 = '#deb7d3', q2 = '#b465a8')) +
   theme_void() + 
-  xlim(0.5, 2.5) 
+  xlim(0.5, 2.5) + 
+  facet_wrap(~scenpair, nrow = 1)
+
+# For 15+ 
+ggplot(pop.size %>% filter(age == '15+')) +
+  geom_bar(aes(x = 2, y = fract, fill = q), stat = "identity", color = "white") +
+  coord_polar(theta = "y", start = 0) +
+  geom_text(aes(x = 2, y = lab.ypos, label = round(fract)), color = "white") +
+  scale_fill_manual(values = c(q1 = '#f5979f', q2 = '#a81e24')) +
+  theme_void() + 
+  xlim(0.5, 2.5) + 
+  facet_wrap(~scenpair, nrow = 1) 

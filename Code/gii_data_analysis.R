@@ -21,7 +21,7 @@ library(ggpmisc)
 library(ggpubr)
 library(gridExtra)
 
-setwd('/Users/marinaandrijevic/PhD/Gender equality projections/Data/Input')
+setwd('/Users/marinaandrijevic/Documents/GitHub/gender_inequality_SSPs/Input')
 
 
 # 1. Gender Inequality Index (GII) - replication based on the UNDP methodology
@@ -217,7 +217,7 @@ vuln <- read.csv('ndgain_vulnerability.csv') %>%
   mutate(year = year %>% str_replace("x", "") %>% as.numeric) %>% 
   rename(countrycode = iso3)
 
-comp <- gii.complete %>%
+comp <- gii.master %>%
   filter(year %in% 2007:2015) %>% # Gender inequality (2007 - 2015 average), to match the Climate Action Index
   group_by(countrycode) %>% 
   mutate(gii.avg = mean(gii)) %>% 
@@ -226,7 +226,7 @@ comp <- gii.complete %>%
   select(-year) %>% 
   left_join(climi, by = 'countrycode') 
 
-comp2 <- gii.complete %>%
+comp2 <- gii.master %>%
   left_join(vuln, by = c('countrycode', 'year')) 
 
 
